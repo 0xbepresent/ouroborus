@@ -271,6 +271,40 @@ class LLMAnalyzer:
             },
         ]
 
+        # System messages for "think" mode: auditor describes a potential issue, LLM verifies using CodeQL tools
+        self.THINK_MESSAGES: List[Dict[str, str]] = [
+            {
+                "role": "system",
+                "content": (
+                    "You are an expert security auditor. An auditor has described a potential issue or hypothesis "
+                    "about the codebase. Your task is to verify it using the code lookup tools (list_contract_functions, "
+                    "get_function_code, get_caller_function). Use the tools to fetch real code from the CodeQL database; "
+                    "do not invent or assume code. Based on the actual code, conclude whether the issue is real, not a "
+                    "vulnerability, or if you need more data."
+                )
+            },
+            {
+                "role": "system",
+                "content": (
+                    "### Instructions\n"
+                    "1. Use list_contract_functions first to see available functions/modifiers.\n"
+                    "2. Use get_function_code to retrieve the relevant code for the hypothesis.\n"
+                    "3. Use get_caller_function if you need call context.\n"
+                    "4. Base your conclusion only on code you retrieved via tools.\n"
+                    "5. End with exactly one status code: 1337 (vulnerability), 1007 (secure), or 7331/3713 (need more data).\n"
+                )
+            },
+            {
+                "role": "system",
+                "content": (
+                    "### Status Codes\n"
+                    "- **1337**: Real security vulnerability. Briefly explain and how it could be exploited.\n"
+                    "- **1007**: Not a vulnerability. Briefly explain what protects against it.\n"
+                    "- **7331**: Need more code/info to decide. Say what you need. Add **3713** if likely not a security issue.\n"
+                )
+            },
+        ]
+
     def _verbose_print(self, message: str, color: str = Colors.RESET) -> None:
         """Print a message if verbose mode is enabled."""
         if self.verbose:
@@ -521,7 +555,8 @@ class LLMAnalyzer:
         functions: List[Dict[str, str]],
         db_path: str,
         temperature: float = 0.2,
-        language: str = "c"
+        language: str = "c",
+        initial_messages: Optional[List[Dict[str, Any]]] = None
     ) -> Tuple[List[Dict[str, Any]], str]:
         """
         Main loop to keep querying the LLM with the MESSAGES context plus
@@ -536,6 +571,7 @@ class LLMAnalyzer:
             db_path (str): Path to the CodeQL DB folder.
             temperature (float, optional): Sampling temperature. Defaults to 0.2.
             language (str, optional): Language being analyzed ('c', 'cpp', 'solidity'). Defaults to 'c'.
+            initial_messages (list, optional): Override default system messages (e.g. for "think" mode).
 
         Returns:
             Tuple[List[Dict[str, Any]], str]:
@@ -569,7 +605,8 @@ class LLMAnalyzer:
         if not has_codeql_context:
             logger.debug("No CodeQL context - running without tools")
 
-        messages: List[Dict[str, Any]] = self.MESSAGES[:]
+        base_messages = (initial_messages if initial_messages is not None else self.MESSAGES)[:]
+        messages: List[Dict[str, Any]] = base_messages
         messages.append({"role": "user", "content": prompt})
 
         amount_of_tools = 0
@@ -837,3 +874,41 @@ class LLMAnalyzer:
                     })
 
         return messages, final_content
+
+    def run_llm_think(
+        self,
+        auditor_prompt: str,
+        function_tree_file: str,
+        db_path: str,
+        temperature: float = 0.2,
+    ) -> Tuple[List[Dict[str, Any]], str]:
+        """
+        Verify an auditor's hypothesis using CodeQL-backed tools (think mode).
+        The LLM uses list_contract_functions, get_function_code, get_caller_function
+        to fetch real code and conclude whether the issue is valid.
+
+        Args:
+            auditor_prompt: The auditor's description of the potential issue.
+            function_tree_file: Path to FunctionTree.csv (or combined CodeTree.csv).
+            db_path: Path to the CodeQL database directory.
+            temperature: Sampling temperature. Defaults to 0.2.
+
+        Returns:
+            Tuple of (conversation messages, final content string).
+        """
+        user_content = (
+            "### Auditor hypothesis / potential issue\n\n"
+            + auditor_prompt
+            + "\n\nUse the tools to retrieve the relevant code and verify whether this is a real "
+            "vulnerability (1337), not an issue (1007), or if you need more data (7331/3713)."
+        )
+        return self.run_llm_security_analysis(
+            prompt=user_content,
+            function_tree_file=function_tree_file,
+            current_function={},
+            functions=[],
+            db_path=db_path,
+            temperature=temperature,
+            language="solidity",
+            initial_messages=self.THINK_MESSAGES,
+        )

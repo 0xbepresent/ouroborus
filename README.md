@@ -66,6 +66,7 @@ You can analyze **local projects** with `--repo-path` (no clone), or **GitHub re
 
 | Command | Description |
 |--------|-------------|
+| `ouroborus think "hypothesis" --codeql-db PATH --function-tree PATH` | Auditor describes a potential issue; LLM verifies using CodeQL tools and returns 1337/1007/7331 |
 | `ouroborus --repo-path PATH` | Analyze a local Solidity project; Slither runs at PATH |
 | `ouroborus --repo-path PATH --skip-slither --slither-results FILE` | Use existing Slither JSON + local path (e.g. with your own CodeQL DB via `--codeql-db`) |
 | `ouroborus --repo-path PATH --codeql-db PATH --function-tree PATH` | Local project + CodeQL DB for LLM code lookup |
@@ -77,6 +78,19 @@ You can analyze **local projects** with `--repo-path` (no clone), or **GitHub re
 | `ouroborus-ui` | Open the results UI without running analysis |
 | `ouroborus-validate` | Validate configuration (.env, LLM, etc.) |
 | `ouroborus-list` | List analyzed repositories |
+
+### Think: verify an auditor hypothesis
+
+As an auditor you can describe a potential issue in plain language; the LLM then uses the CodeQL database and function tree to fetch real code and verify whether it is a vulnerability. No Slither run is required—just a CodeQL DB and function tree (see below for how to build them).
+
+```bash
+ouroborus think "possible reentrancy in withdraw when calling external contract" \
+  --codeql-db ./my-project-solidity-db \
+  --function-tree ./CodeTree.csv \
+  --verbose
+```
+
+The LLM will use `list_contract_functions`, `get_function_code`, and `get_caller_function` to reason over actual code and respond with a status code (1337 = vulnerability, 1007 = secure, 7331/3713 = need more data).
 
 ### CodeQL database and function tree (deterministic code lookup)
 

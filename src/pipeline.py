@@ -34,6 +34,7 @@ from src.codeql.fetch_repos import fetch_codeql_dbs
 from src.codeql.run_codeql_queries import compile_and_run_codeql_queries
 from src.utils.config import get_codeql_path
 from src.utils.config_validator import validate_and_exit_on_error
+from src.utils.llm_config import load_llm_config
 from src.utils.logger import setup_logging, get_logger
 from src.utils.exceptions import (
     CodeQLError, CodeQLConfigError, CodeQLExecutionError,
@@ -217,14 +218,110 @@ def step4_open_ui() -> None:
     ui_main()
 
 
+def run_think_pipeline(
+    prompt: str,
+    codeql_db: str,
+    function_tree: str,
+    verbose: bool = False,
+) -> None:
+    """
+    Verify an auditor's hypothesis using the LLM and CodeQL code lookup tools.
+    The auditor describes a potential issue; the LLM fetches real code via tools
+    and concludes whether it is a vulnerability (1337), not an issue (1007), or
+    needs more data (7331/3713).
+    """
+    from src.llm.llm_analyzer import LLMAnalyzer
+
+    logger.info("Ouroborus think – verifying auditor hypothesis with CodeQL")
+    logger.info("=" * 60)
+    logger.info("CodeQL database: %s", codeql_db)
+    logger.info("Function tree: %s", function_tree)
+    if not prompt.strip():
+        logger.error("No prompt provided. Usage: ouroborus think \"your hypothesis\" --codeql-db PATH --function-tree PATH")
+        sys.exit(1)
+    logger.info("")
+
+    try:
+        validate_and_exit_on_error()
+    except (LLMConfigError, OuroborusError) as e:
+        logger.error("Configuration error: %s", e)
+        _log_exception_cause(e)
+        sys.exit(1)
+
+    config = load_llm_config()
+    analyzer = LLMAnalyzer(verbose=verbose)
+    analyzer.init_llm_client(config=config)
+
+    try:
+        messages, content = analyzer.run_llm_think(
+            auditor_prompt=prompt.strip(),
+            function_tree_file=function_tree,
+            db_path=codeql_db,
+        )
+    except LLMApiError as e:
+        logger.error("LLM API error: %s", e)
+        _log_exception_cause(e)
+        sys.exit(1)
+    except LLMError as e:
+        logger.error("LLM error: %s", e)
+        _log_exception_cause(e)
+        sys.exit(1)
+
+    logger.info("")
+    logger.info("=" * 60)
+    logger.info("Result")
+    logger.info("=" * 60)
+    print(content)
+    logger.info("")
+
+
 def main_analyze() -> None:
     """
     CLI entry point for smart contract security analysis.
     
     Expected usage:
+        ouroborus think "auditor hypothesis" --codeql-db PATH --function-tree PATH   # verify with LLM + CodeQL
         ouroborus --repo-path /path/to/project [options]
         ouroborus <org/repo> [--force] [options]   # clone from GitHub then analyze
     """
+    argv = sys.argv[1:]
+    if argv and argv[0].lower() == "think":
+        think_parser = argparse.ArgumentParser(
+            prog="ouroborus think",
+            description="Verify an auditor's hypothesis using CodeQL and the LLM"
+        )
+        think_parser.add_argument(
+            "prompt",
+            nargs="+",
+            help="Auditor's description of the potential issue (e.g. \"possible reentrancy in withdraw\")"
+        )
+        think_parser.add_argument(
+            "--codeql-db",
+            required=True,
+            metavar="PATH",
+            help="Path to CodeQL database (enables code lookup tools)"
+        )
+        think_parser.add_argument(
+            "--function-tree",
+            required=True,
+            metavar="PATH",
+            help="Path to FunctionTree.csv or CodeTree.csv"
+        )
+        think_parser.add_argument(
+            "--verbose", "-v",
+            action="store_true",
+            help="Show LLM thinking and tool calls in real-time"
+        )
+        targs = think_parser.parse_args(argv[1:])
+        prompt_text = " ".join(targs.prompt)
+        run_think_pipeline(
+            prompt=prompt_text,
+            codeql_db=targs.codeql_db,
+            function_tree=targs.function_tree,
+            verbose=targs.verbose,
+        )
+        return
+
     parser = argparse.ArgumentParser(
         prog="ouroborus",
         description="Ouroborus - Smart contract security analysis with LLM classification (Slither + LLM)"
