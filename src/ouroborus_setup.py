@@ -124,7 +124,6 @@ def main() -> None:
     else:
         logger.info("Run one of the following commands to start the pipeline:")
     logger.info("   • poetry run ouroborus <org/repo>    # Analyze a specific repository")
-    logger.info("   • poetry run ouroborus-example       # See a full pipeline run")
 
 
 if __name__ == "__main__":

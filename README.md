@@ -77,7 +77,6 @@ You can analyze **local projects** with `--repo-path` (no clone), or **GitHub re
 | `ouroborus-ui` | Open the results UI without running analysis |
 | `ouroborus-validate` | Validate configuration (.env, LLM, etc.) |
 | `ouroborus-list` | List analyzed repositories |
-| `ouroborus-example` | Run the example pipeline |
 
 ### CodeQL database and function tree (deterministic code lookup)
 

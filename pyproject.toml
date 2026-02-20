@@ -38,7 +38,6 @@ ouroborus = "src.pipeline:main_analyze"
 ouroborus-ui = "src.pipeline:main_ui"
 ouroborus-validate = "src.pipeline:main_validate"
 ouroborus-list = "src.pipeline:main_list"
-ouroborus-example = "src.pipeline:main_example"
 
 [build-system]
 requires = ["poetry-core"]

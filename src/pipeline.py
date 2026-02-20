@@ -660,15 +660,5 @@ def main_list() -> None:
         )
 
 
-def main_example() -> None:
-    """
-    CLI entry point to run the example pipeline.
-    
-    Expected usage: ouroborus-example
-    """
-    from examples.example import main as example_main
-    example_main()
-
-
 if __name__ == '__main__':
     main_analyze()
