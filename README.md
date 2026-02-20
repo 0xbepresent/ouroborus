@@ -85,6 +85,73 @@ You can pass a **CodeQL database** and a **function tree** (e.g. a CSV of functi
 - `--codeql-db PATH` — path to a CodeQL database for the Solidity project (built with `codeql database create` or your usual workflow).
 - `--function-tree PATH` — path to a function tree file (e.g. `FunctionTree.csv` or similar) used for resolving function names to code.
 
+**CodeQL for Solidity (CyScout)**  
+To build CodeQL databases and run queries (including the function tree) on Solidity, you can use [CyScout](https://github.com/0xbepresent/CyScout): a CodeQL extension for the Solidity language. Clone the repo and use its extractor and QL libraries as below.
+
+**1. Create a CodeQL-Solidity database**
+
+Point the CodeQL CLI at CyScout’s extractor and your project source (e.g. a cloned repo or `output/repos/solidity/<project>`):
+
+```bash
+codeql database create \
+  --search-path <CyScout_path>/solidity/codeql/codeql/solidity/extractor-pack \
+  -l solidity \
+  ./<project>-solidity-db \
+  -s /path/to/your/solidity-repo
+```
+
+**2. Run the FunctionTree query and export CSV**
+
+Run the `FunctionTree.ql` query from CyScout and decode the result to CSV so Ouroborus can use it as `--function-tree`:
+
+```bash
+codeql query run <CyScout_path>/solidity/codeql/solidity/ql/lib/FunctionTree.ql \
+  -d ./<project>-solidity-db \
+  --output=FunctionTree.bqrs
+
+codeql bqrs decode FunctionTree.bqrs --format=csv --output=FunctionTree.csv
+```
+
+**2b. (Optional) Run ModifierTree and build a combined code tree CSV**
+
+To include modifiers in the same tree file, run `ModifierTree.ql`, decode to CSV, then append its rows (without the header) to a combined file. Use the combined CSV as `--function-tree` so the LLM can look up both functions and modifiers:
+
+```bash
+codeql query run <CyScout_path>/solidity/codeql/solidity/ql/lib/ModifierTree.ql \
+  -d ./<project>-solidity-db \
+  --output=Modifiers.bqrs
+
+codeql bqrs decode Modifiers.bqrs --format=csv --output=Modifiers.csv
+
+# Use FunctionTree.csv as the base, then append modifier rows (skip header with tail -n +2)
+cp FunctionTree.csv CodeTree.csv
+tail -n +2 Modifiers.csv >> CodeTree.csv
+```
+
+Then pass `--function-tree ./CodeTree.csv` when running Ouroborus (step 4).
+
+**3. (Optional) Run other CodeQL-Solidity detectors**
+
+CyScout includes detectors such as `slither-bad-prng.ql`, `slither-msg-value-in-loop.ql`, etc. Example:
+
+```bash
+codeql query run <CyScout_path>/solidity/codeql/solidity/ql/lib/slither-bad-prng.ql -d ./<project>-solidity-db
+codeql query run <CyScout_path>/solidity/codeql/solidity/ql/lib/slither-msg-value-in-loop.ql -d ./<project>-solidity-db
+```
+
+**4. Run Ouroborus with the CodeQL DB and function tree**
+
+Use the database directory and the generated function tree CSV with `--codeql-db` and `--function-tree`. For `--function-tree`, use `FunctionTree.csv` (functions only) or `CodeTree.csv` if you built the combined file in step 2b (functions + modifiers):
+
+```bash
+ouroborus --skip-slither \
+  --slither-results output/slither_results/<project>_slither.json \
+  --repo-path output/repos/solidity/<project> \
+  --codeql-db ./<project>-solidity-db \
+  --function-tree ./FunctionTree.csv \
+  --verbose
+```
+
 Use this when you already have Slither results and a CodeQL DB (e.g. from CI or a separate build). Example: skip Slither, use existing results, and enable code lookup:
 
 ```bash
