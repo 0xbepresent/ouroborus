@@ -2,7 +2,7 @@
 
 **Smart contract security analysis with LLM classification.**
 
-Ouroborus runs [Slither](https://github.com/crytic/slither) on Solidity repositories, then uses an LLM (OpenAI, Azure, Gemini, etc.) to classify findings as true positives, false positives, or needing more data. Results can be browsed in the built-in UI.
+Ouroborus runs [Slither](https://github.com/crytic/slither) on Solidity repositories, then uses an LLM (OpenAI, Azure, Gemini, OpenRouter, etc.) to classify findings as true positives, false positives, or needing more data. Results can be browsed in the built-in UI.
 
 ---
 
@@ -12,7 +12,7 @@ Ouroborus runs [Slither](https://github.com/crytic/slither) on Solidity reposito
 
 - **Python 3.10 – 3.13** (3.11 or 3.12 recommended)
 - **Poetry** (recommended) or pip
-- **LLM API key** (OpenAI, Azure, or Gemini)
+- **LLM API key** (OpenAI, Azure, Gemini, OpenRouter, or other provider — see `.env.example`)
 - **Slither** (optional; install for full pipeline: `pip install slither-analyzer solc-select`)
 
 ### Install with Poetry (recommended)
