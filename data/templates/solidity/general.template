@@ -1,0 +1,5 @@
+1. Is this a real security vulnerability that could be exploited?
+2. What is the attack vector? How would an attacker exploit this?
+3. Are there any access controls or modifiers that prevent exploitation?
+4. Could this lead to loss of funds, unauthorized access, or contract manipulation?
+5. Is the contract upgradeable? Could this affect the upgrade pattern?

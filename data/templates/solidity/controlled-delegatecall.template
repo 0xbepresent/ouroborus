@@ -1,0 +1,6 @@
+1. Can an attacker control the target address of the delegatecall?
+2. What input validation exists for the delegatecall target?
+3. Could this be used to execute arbitrary code in the contract's context?
+4. Is this intended for a proxy pattern or is it a vulnerability?
+5. What storage could be corrupted by a malicious delegatecall?
+6. Are there any restrictions on who can call this function?

@@ -1,0 +1,7 @@
+1. Does this function make an external call before updating state?
+2. Is the state variable properly updated BEFORE the external call?
+3. Does the function use a reentrancy guard (nonReentrant modifier)?
+4. Can an attacker re-enter this function during the external call?
+5. What is the maximum amount of ETH that could be drained?
+6. Are there any checks that would prevent recursive calls?
+7. Is the Checks-Effects-Interactions pattern followed?

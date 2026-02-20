@@ -1,0 +1,13 @@
+### Issue Overview
+Name: {name}
+Description: {description}
+Impact: {impact}
+Confidence: {confidence}
+Message: {message}
+Location: {location}
+
+### Hints for Validation
+{hints}
+
+### Code
+{code}

@@ -1,0 +1,6 @@
+1. Can an attacker control the destination address for ETH transfer?
+2. What input validation exists for the recipient address?
+3. Is there access control (onlyOwner, onlyAdmin) on this function?
+4. Could this be exploited to drain the contract's ETH balance?
+5. Are there any allowlists or denylists for recipient addresses?
+6. What is the source of the amount being sent?

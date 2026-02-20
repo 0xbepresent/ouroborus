@@ -1,0 +1,7 @@
+1. Is the upgrade function properly protected with access control?
+2. Can anyone call the upgrade function or only authorized addresses?
+3. Is there a timelock or multi-sig requirement for upgrades?
+4. Could an attacker upgrade the contract to a malicious implementation?
+5. Is the initializer function protected against re-initialization?
+6. Does the proxy pattern follow OpenZeppelin's best practices?
+7. Is there a way to pause upgrades in case of emergency?

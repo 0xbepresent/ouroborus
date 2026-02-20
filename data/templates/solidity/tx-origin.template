@@ -1,0 +1,6 @@
+1. Is tx.origin used for authentication or authorization?
+2. Could a malicious contract trick a user into calling this function?
+3. Should this be using msg.sender instead of tx.origin?
+4. What is the attack scenario for a phishing attack using tx.origin?
+5. Are there any other security checks that mitigate this risk?
+6. Is this intentional behavior (e.g., for meta-transactions)?

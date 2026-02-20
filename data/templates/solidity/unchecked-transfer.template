@@ -1,0 +1,6 @@
+1. Is the return value of transfer/transferFrom being checked?
+2. Does the code use SafeERC20 library for token transfers?
+3. What happens if the transfer fails silently?
+4. Could a failed transfer lead to accounting errors or locked funds?
+5. Is this a well-known token that returns true on success, or an arbitrary token?
+6. Are there any try/catch blocks handling potential failures?
