@@ -128,20 +128,11 @@ cp FunctionTree.csv CodeTree.csv
 tail -n +2 Modifiers.csv >> CodeTree.csv
 ```
 
-Then pass `--function-tree ./CodeTree.csv` when running Ouroborus (step 4).
+Then pass `--function-tree ./CodeTree.csv` when running Ouroborus (step 3).
 
-**3. (Optional) Run other CodeQL-Solidity detectors**
+**3. Run Ouroborus with the CodeQL DB and function tree**
 
-CyScout includes detectors such as `slither-bad-prng.ql`, `slither-msg-value-in-loop.ql`, etc. Example:
-
-```bash
-codeql query run <CyScout_path>/solidity/codeql/solidity/ql/lib/slither-bad-prng.ql -d ./<project>-solidity-db
-codeql query run <CyScout_path>/solidity/codeql/solidity/ql/lib/slither-msg-value-in-loop.ql -d ./<project>-solidity-db
-```
-
-**4. Run Ouroborus with the CodeQL DB and function tree**
-
-Use the database directory and the generated function tree CSV with `--codeql-db` and `--function-tree`. For `--function-tree`, use `FunctionTree.csv` (functions only) or `CodeTree.csv` if you built the combined file in step 2b (functions + modifiers):
+Use the database directory and the generated function tree CSV with `--codeql-db` and `--function-tree`. For `--function-tree`, use `FunctionTree.csv` (functions only) or `CodeTree.csv` if you built the combined file in step 2b (functions + modifiers).
 
 ```bash
 ouroborus --skip-slither \
